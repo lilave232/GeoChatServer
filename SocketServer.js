@@ -2,6 +2,8 @@ var Person = require("./User.js").Person;
 var Users = require("./User.js").Users;
 var Chats = require("./User.js").Chats;
 var Chat = require("./User.js").Chat;
+var mysql = require('mysql');
+var moment = require('moment-timezone');
 var Users = new Users();
 var Chats = new Chats();
 function StartServer(server) {
@@ -45,7 +47,6 @@ function StartServer(server) {
         });
         connection.on('close', function(reasonCode, description) {
             Users.deleteUser(connection)
-            console.log("User Left")
         });
     });
 }
@@ -56,13 +57,14 @@ function handleMessages(type, data, connection) {
             Username = data["User"]["Username"]
             var User = new Person(Username,connection);
             Users.addUser(User);
-            console.log("User " + Username + " Joined")
             break;
         //Message Send
         case 1:
             chatID = data["Message"]["chatID"]
             message = data["Message"]["message"]
             userFrom = data["Message"]["userFrom"]
+            color = data["Message"]["color"]
+            addMessageToChat(chatID, message, userFrom, color)
             if (!Users.isUserOnline(userFrom)) {
                 var User = new Person(userFrom,connection);
                 Users.addUser(User);
@@ -70,7 +72,7 @@ function handleMessages(type, data, connection) {
             }
             var chat = Chats.getChat(chatID)
             for (x = 0; x < chat.Users.length; x++) {
-                response = JSON.stringify({type:0,message:message,chatID:chatID,userFrom:userFrom});
+                response = JSON.stringify({type:0,message:message,chatID:chatID,userFrom:userFrom,color:color});
                 chat.Users[x].connection.sendUTF(response)
             }
             break;
@@ -83,7 +85,6 @@ function handleMessages(type, data, connection) {
                 Users.addUser(User);
             }
             addUserToChat(chatID, Username)
-            console.log(Chats.getChat(chatID))
             break;
         //User Left Chat
         case 3:
@@ -113,6 +114,73 @@ function handleMessages(type, data, connection) {
     }
 }
 
+function addMessageToChat(chatID, message, userFrom, color) {
+    var con = mysql.createConnection({
+        host: "localhost",
+        user: "lilave232",
+        password: "Quinn123!",
+        database: "GeoChat"
+        });
+    // Prepare output in JSON format
+    /*response = {
+        first_name:req.body.first_name,
+        last_name:req.body.last_name
+    };*/
+    time = getDateEST()
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        //INSERT INTO `Chats`(chatID`,`userFrom`,`message`,`color`) VALUES(chatID,userFrom,message,color);
+
+        //
+        con.query("INSERT INTO `Chats` (`chatID`,`userFrom`,`message`,`color`,`time`) VALUES(" +mysql.escape(chatID) + ", " + mysql.escape(userFrom) + ", " + mysql.escape(message) + ", " + color + ", " + mysql.escape(time) + ");", function (err, result, fields) {
+            if (err) {
+            console.log(err)
+            } else {
+            console.log("Message Added To Chat")
+            alterChatsIDTable(chatID, message, userFrom, time)
+            }
+        }); 
+    });
+}
+
+function getDateEST() {
+    var d = new Date();
+    var myTimezone = "America/Toronto";
+    var myDatetimeFormat= "YYYY-MM-DD HH:mm:ss";
+    var myDatetimeString = moment(d).tz(myTimezone).format(myDatetimeFormat);
+    return myDatetimeString
+  }
+
+function alterChatsIDTable(chatID, message, userFrom, time) {
+    //UPDATE `GeoChat`.`ChatsID` SET `Latest_Message`='Hello', `Sent_By`='lilave232', `Time_Of_Message` = NOW() WHERE (`chat_id` = '3b8331e3-c0cb-4c8e-85ef-35eefdd7b115');
+    var con = mysql.createConnection({
+        host: "localhost",
+        user: "lilave232",
+        password: "Quinn123!",
+        database: "GeoChat"
+        });
+    // Prepare output in JSON format
+    /*response = {
+        first_name:req.body.first_name,
+        last_name:req.body.last_name
+    };*/
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        //INSERT INTO `Chats`(chatID`,`userFrom`,`message`,`color`) VALUES(chatID,userFrom,message,color);
+
+        //
+        con.query("UPDATE `ChatsID` SET `Latest_Message`=" + mysql.escape(message) + ", `Sent_By`=" + mysql.escape(userFrom) + ", `Time_Of_Message` =" + mysql.escape(time) + " WHERE (`chat_id` = " + mysql.escape(chatID) + ");", function (err, result, fields) {
+            if (err) {
+            console.log(err)
+            } else {
+            console.log("Message Added To Chat")
+            }
+        }); 
+    });
+}
+
 function addUserToChat(chatID, Username) {
     var chat = null
     if (!Chats.getChat(chatID)) {
@@ -121,7 +189,6 @@ function addUserToChat(chatID, Username) {
         User = Users.getUser(Username)
         chat.addUser(User)
         Chats.addChat(chat)
-        console.log("Chat " + chatID + " Added")
     } else {
         console.log("Chat Exists")
         User = Users.getUser(Username)

@@ -7,39 +7,41 @@ function Users() {
 
 UsersMethod.addUser = function(Person) {
     this.Users.push(Person);
+    console.log("User " + Person.username + " Joined")
 }
 
 UsersMethod.deleteUser = function(Connection) {
-    for (i = 0; i < this.Users.length; i++) {
-        if (this.Users[i].connection == Connection) {
-            this.Users.splice(i,1);
-            return;
-        }
+    var picked = this.Users.findIndex(x => x.connection == Connection)
+    if (picked != -1) {
+        this.Users.splice(picked,1);
+        console.log("User Left")
     }
 }
 
 UsersMethod.isUserOnline = function(Username) {
-    for (i = 0; i < this.Users.length; i++) {
-        if (this.Users[i].username == Username) {
-            return true;
-        }
+    var picked = this.Users.find(x => x.username == Username)
+    if (picked == undefined) {
+        return false
+    } else {
+        return true
     }
-    return false;
 }
 
 UsersMethod.getConnection = function(Username) {
-    for (i = 0; i < this.Users.length; i++) {
-        if (this.Users[i].username == Username) {
-            return this.Users[i].connection;
-        }
+    var picked = this.Users.find(x => x.username == Username)
+    if (picked == undefined) {
+        return false
+    } else {
+        return picked.connection
     }
 }
 
 UsersMethod.getUser = function(Username) {
-    for (i = 0; i < this.Users.length; i++) {
-        if (this.Users[i].username == Username) {
-            return this.Users[i];
-        }
+    var picked = this.Users.find(x => x.username == Username)
+    if (picked == undefined) {
+        return false
+    } else {
+        return picked
     }
 }
 
@@ -63,40 +65,38 @@ function Chats() {
 
 ChatsMethod.addChat = function(Chat) {
     this.Chats.push(Chat);
+    console.log("Chat " + Chat.chatID + " Added")
 }
 
 ChatsMethod.deleteChat = function(chatID) {
-    for (i = 0; i < this.Chats.length; i++) {
-        if (this.Chats[i].chatID == chatID) {
-            console.log(this.Chats.length)
-            delete this.Chats.splice(i,1);
-            console.log(this.Chats.length)
-            return;
-        }
+    let picked = this.Chats.findIndex(x => x.chatID == chatID)
+    if (picked == -1) {
+
+    } else {
+        this.Chats.splice(picked,1);
+        console.log("Chat Deleted")
     }
 }
 
 ChatsMethod.removeUserFromAll = function(Username) {
-    for (i = 0; i < this.Chats.length; i++) {
-        for (x = 0; x < this.Chats[i].Users.length; x++) {
-            if (this.Chats[i].Users[x].username == Username) {
-                console.log(this.Chats[i].Users.length)
-                this.Chats[i].Users.splice(x,1);
-                console.log(this.Chats[i].Users.length)
-                console.log("User Removed")
-                break;
-            }
+    for (x = 0; x < this.Chats.length; x++) {
+        let y = this.Chats[x].Users.findIndex(y => y.username == Username)
+        if (y == -1) {
+
+        } else {
+            this.Chats[x].Users.splice(y,1);
+            console.log("User Removed From " + this.Chats[x].chatID)
         }
     }
 }
 
 ChatsMethod.getChat = function(chatID) {
-    for (i = 0; i < this.Chats.length; i++) {
-        if (this.Chats[i].chatID == chatID) {
-            return this.Chats[i];
-        }
+    var picked = this.Chats.find (x => x.chatID === chatID);
+    if (picked == undefined) {
+        return false
+    } else {
+        return picked
     }
-    return false
 }
 
 var ChatMethod = Chat.prototype;
@@ -108,15 +108,20 @@ function Chat(chatID) {
 
 ChatMethod.addUser = function(User) {
     this.Users.push(User)
+    var names = this.Users.map(function(item) {
+        return item.username;
+    });
+    console.log("User Added To Chat")
+    console.log("Chat: " + this.chatID + " Users: " + names)
 }
 
 ChatMethod.deleteUser = function(Username) {
-    for (i = 0; i < this.Users.length; i++) {
-        if (this.Users[i].username == Username) {
-            this.Users.splice(i,1);
-            console.log("User Removed")
-            break;
-        }
+    var picked = this.Users.findIndex (x => x.username === Username);
+    if (picked == -1) {
+        return false
+    } else {
+        this.Users.splice(picked,1);
+        console.log("User Removed")
     }
 }
 

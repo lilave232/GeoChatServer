@@ -47,6 +47,12 @@ app.post('/GetMapChats',urlencodedParser, async function (req, res) {
   res.send(response);
 })
 
+app.post('/GetChat',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await getChat(req);
+  res.send(response);
+})
+
 var server = app.listen(8081, '0.0.0.0', function () {
 
     var host = server.address().address
@@ -63,6 +69,54 @@ var server = app.listen(8081, '0.0.0.0', function () {
 var SocketServer = require("./SocketServer.js");
 SocketServer.start(server);
 
+var getChat = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: "localhost",
+        user: "lilave232",
+        password: "Quinn123!",
+        database: "GeoChat"
+      });
+   // Prepare output in JSON format
+    /*response = {
+        first_name:req.body.first_name,
+        last_name:req.body.last_name
+    };*/
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        var chatID = req.body.chatID
+
+        //SELECT * FROM GeoChat.Chats WHERE `chatID` = '40df4a50-6a8f-4a0e-b5ea-9c52094c682a';
+        con.query("SELECT * FROM Chats WHERE `chatID` = " + mysql.escape(chatID) +";", function (err, result, fields) {
+          if (err) {
+            console.log(err)
+            response = JSON.stringify({error:true,Title:"Failure",message:"No Chats to Load!"});
+            con.end();
+            resolve(response);
+          } else {
+            if (result.length > 0)
+            {
+              //var sql = "UPDATE Users SET Token = " + mysql.escape(Token) + " WHERE Username = " + mysql.escape(Username) + "";
+              //  con.query(sql, function (err, result1) {
+              //  if (err) throw err;
+                response = JSON.stringify({error:false,Title:"Success",chats:result});
+                con.end();
+                resolve(response);
+              //});
+            }
+            else {
+                response = JSON.stringify({error:true,Title:"Failure",message:"No Chats to Load!"});
+                con.end();
+                resolve(response);
+            }
+          }
+        }); 
+    });
+  });
+}
+ 
 var UpdateLocation = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
