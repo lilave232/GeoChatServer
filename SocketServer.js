@@ -63,8 +63,9 @@ function handleMessages(type, data, connection) {
             chatID = data["Message"]["chatID"]
             message = data["Message"]["message"]
             userFrom = data["Message"]["userFrom"]
-            color = data["Message"]["color"]
-            addMessageToChat(chatID, message, userFrom, color)
+            colorBack = data["Message"]["colorBack"]
+            colorFront = data["Message"]["colorFront"]
+            addMessageToChat(chatID, message, userFrom, colorBack, colorFront)
             if (!Users.isUserOnline(userFrom)) {
                 var User = new Person(userFrom,connection);
                 Users.addUser(User);
@@ -72,7 +73,7 @@ function handleMessages(type, data, connection) {
             }
             var chat = Chats.getChat(chatID)
             for (x = 0; x < chat.Users.length; x++) {
-                response = JSON.stringify({type:0,message:message,chatID:chatID,userFrom:userFrom,color:color});
+                response = JSON.stringify({type:0,message:message,chatID:chatID,userFrom:userFrom,colorBack:colorBack,colorFront:colorFront});
                 chat.Users[x].connection.sendUTF(response)
             }
             break;
@@ -114,7 +115,7 @@ function handleMessages(type, data, connection) {
     }
 }
 
-function addMessageToChat(chatID, message, userFrom, color) {
+function addMessageToChat(chatID, message, userFrom, colorBack, colorFront) {
     var con = mysql.createConnection({
         host: "localhost",
         user: "lilave232",
@@ -133,7 +134,7 @@ function addMessageToChat(chatID, message, userFrom, color) {
         //INSERT INTO `Chats`(chatID`,`userFrom`,`message`,`color`) VALUES(chatID,userFrom,message,color);
 
         //
-        con.query("INSERT INTO `Chats` (`chatID`,`userFrom`,`message`,`color`,`time`) VALUES(" +mysql.escape(chatID) + ", " + mysql.escape(userFrom) + ", " + mysql.escape(message) + ", " + color + ", " + mysql.escape(time) + ");", function (err, result, fields) {
+        con.query("INSERT INTO `Chats` (`chatID`,`userFrom`,`message`,`colorBack`, `colorFront`, `time`) VALUES(" +mysql.escape(chatID) + ", " + mysql.escape(userFrom) + ", " + mysql.escape(message) + ", " + colorBack + ", " + colorFront + ", " + mysql.escape(time) + ");", function (err, result, fields) {
             if (err) {
             console.log(err)
             } else {

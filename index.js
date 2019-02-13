@@ -53,6 +53,31 @@ app.post('/GetChat',urlencodedParser, async function (req, res) {
   res.send(response);
 })
 
+app.post('/GetFriends',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await getFriends(req);
+  res.send(response);
+})
+
+app.post('/AddFriends',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await addFriends(req);
+  res.send(response);
+})
+
+app.post('/RemoveFriend',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await removeFriend(req);
+  res.send(response);
+})
+
+app.post('/GetAllUsers',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await getAllUsers(req);
+  res.send(response);
+})
+
+
 var server = app.listen(8081, '0.0.0.0', function () {
 
     var host = server.address().address
@@ -112,6 +137,170 @@ var getChat = function(req) {
                 resolve(response);
             }
           }
+        }); 
+    });
+  });
+}
+
+var getFriends = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: "localhost",
+        user: "lilave232",
+        password: "Quinn123!",
+        database: "GeoChat"
+      });
+   // Prepare output in JSON format
+    /*response = {
+        first_name:req.body.first_name,
+        last_name:req.body.last_name
+    };*/
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        var Username = req.body.Username
+
+        //SELECT * FROM GeoChat.Chats WHERE `chatID` = '40df4a50-6a8f-4a0e-b5ea-9c52094c682a';
+        con.query("SELECT * FROM Friends WHERE `Username` = " + mysql.escape(Username) +" ORDER BY `Friend`;", function (err, result, fields) {
+          if (err) {
+            console.log(err)
+            response = JSON.stringify({error:true,Title:"Failure",message:"No Friends to Load!"});
+            con.end();
+            resolve(response);
+          } else {
+            if (result.length > 0)
+            {
+              //var sql = "UPDATE Users SET Token = " + mysql.escape(Token) + " WHERE Username = " + mysql.escape(Username) + "";
+              //  con.query(sql, function (err, result1) {
+              //  if (err) throw err;
+                response = JSON.stringify({error:false,Title:"Success",chats:result});
+                con.end();
+                resolve(response);
+              //});
+            }
+            else {
+                response = JSON.stringify({error:true,Title:"Failure",message:"No Friends to Load!"});
+                con.end();
+                resolve(response);
+            }
+          }
+        }); 
+    });
+  });
+}
+
+var getAllUsers = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: "localhost",
+        user: "lilave232",
+        password: "Quinn123!",
+        database: "GeoChat"
+      });
+   // Prepare output in JSON format
+    /*response = {
+        first_name:req.body.first_name,
+        last_name:req.body.last_name
+    };*/
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        var Username = req.body.Username
+
+        //SELECT * FROM GeoChat.Chats WHERE `chatID` = '40df4a50-6a8f-4a0e-b5ea-9c52094c682a';
+        con.query("SELECT `Username` FROM Users WHERE `Username`!=" + mysql.escape(Username) + ";", function (err, result, fields) {
+          if (err) {
+            console.log(err)
+            response = JSON.stringify({error:true,Title:"Failure",message:"No Users to Load!"});
+            con.end();
+            resolve(response);
+          } else {
+            if (result.length > 0)
+            {
+              //var sql = "UPDATE Users SET Token = " + mysql.escape(Token) + " WHERE Username = " + mysql.escape(Username) + "";
+              //  con.query(sql, function (err, result1) {
+              //  if (err) throw err;
+                response = JSON.stringify({error:false,Title:"Success",users:result});
+                con.end();
+                resolve(response);
+              //});
+            }
+            else {
+                response = JSON.stringify({error:true,Title:"Failure",message:"No Friends to Load!"});
+                con.end();
+                resolve(response);
+            }
+          }
+        }); 
+    });
+  });
+}
+
+var addFriends = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: "localhost",
+        user: "lilave232",
+        password: "Quinn123!",
+        database: "GeoChat"
+      });
+    //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
+    //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
+    let Friend = mysql.escape(req.body.Friend);
+    let Username = mysql.escape(req.body.Username);
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        con.query("INSERT INTO `Friends`(`Username`,`Friend`)VALUES(" + Username + ", " + Friend + ");", function (err, result, fields) {
+          if (err) {
+            response = JSON.stringify({error:true,Title:"Failure",message:"Could not add Friend"});
+            con.end();
+            resolve(response);
+            throw err;
+          }
+          else {
+              con.end();
+              console.log("Added Friend " + Friend + " For " + Username)
+              response = JSON.stringify({error:false,Title:"Success",message:"Friend Added"});
+              resolve(response);
+            }
+        }); 
+    });
+  });
+}
+
+var removeFriend = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: "localhost",
+        user: "lilave232",
+        password: "Quinn123!",
+        database: "GeoChat"
+      });
+    //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
+    //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
+    let Friend = mysql.escape(req.body.Friend);
+    let Username = mysql.escape(req.body.Username);
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        con.query("DELETE FROM `Friends` WHERE `Username`=" + Username + " AND  `Friend`=" + Friend + ";", function (err, result, fields) {
+          if (err) {
+            response = JSON.stringify({error:true,Title:"Failure",message:"Friend Not Removed"});
+            con.end();
+            resolve(response);
+            throw err;
+          }
+          else {
+            console.log("Removed Friend " + Friend + " For " + Username)
+              con.end();
+              response = JSON.stringify({error:false,Title:"Success",message:"Friend Removed"});
+              resolve(response);
+            }
         }); 
     });
   });
@@ -231,7 +420,7 @@ var CreateChat = function(req) {
           else {
               con.end();
               console.log("Created Chat " + Chat_ID + " For " + Username)
-              response = JSON.stringify({error:false,Title:"Success",message:"Chat Updated"});
+              response = JSON.stringify({error:false,Title:"Success",message:"Chat Created"});
               resolve(response);
             }
         }); 
@@ -319,9 +508,6 @@ var Register = function(req)  {
                 {
                   console.log(result[0]);
                   response = JSON.stringify({error:false,Title:"Success",message:"Successfully Registered!!"});
-                  table_username = Username.substring(1,Username.length-1)
-                  con.query(create_friends_table = "CREATE TABLE `GeoChat`.`" + table_username + "_Friends` (`index` INT NOT NULL AUTO_INCREMENT,`username` VARCHAR(255) NULL,PRIMARY KEY (`index`),UNIQUE INDEX `Username_UNIQUE` (`Username` ASC) VISIBLE);");
-                  con.end();
                   resolve(response);
                 }
                 else {
