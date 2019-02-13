@@ -4,6 +4,7 @@ var crypto = require('crypto');
 var mysql = require('mysql');
 var apn = require('apn');
 var WebSocketServer = require('websocket').server;
+var credentials = require("./credentials.js")
 var http = require('http');
 const uuidv4 = require('uuid/v4')
 var _connections = [];
@@ -85,10 +86,10 @@ var server = app.listen(8081, '0.0.0.0', function () {
     /*var Person = require("./User.js").Person;
     var Users = require("./User.js").Users;
     var Users = new Users();
-    var User = new Person("avery","pozzobon","averypozzobon@gmail.com","lilave232","11221122112211")
+    var User = new Person("avery","pozzobon","averypozzobon@gmail.com",credentials.username,"11221122112211")
     Users.addUser(User);
     console.log(Users);*/
-    //Person.addUser("avery","pozzobon","averypozzobon@gmail.com","lilave232","11221122112211");
+    //Person.addUser("avery","pozzobon","averypozzobon@gmail.com",credentials.username,"11221122112211");
     console.log("Example app listening at http://%s:%s", host, port)
 });
 var SocketServer = require("./SocketServer.js");
@@ -97,10 +98,10 @@ SocketServer.start(server);
 var getChat = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
       });
    // Prepare output in JSON format
     /*response = {
@@ -145,10 +146,10 @@ var getChat = function(req) {
 var getFriends = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
       });
    // Prepare output in JSON format
     /*response = {
@@ -193,10 +194,10 @@ var getFriends = function(req) {
 var getAllUsers = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
       });
    // Prepare output in JSON format
     /*response = {
@@ -241,10 +242,10 @@ var getAllUsers = function(req) {
 var addFriends = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -275,10 +276,10 @@ var addFriends = function(req) {
 var removeFriend = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -309,10 +310,10 @@ var removeFriend = function(req) {
 var UpdateLocation = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
       });
     //UPDATE `GeoChat`.`Users` SET `Longitude` = '-80.53403359682538', `Latitude` = '43.474176473396845' WHERE (`Username` = 'lilave232');
     let Username = req.body.Username;
@@ -343,10 +344,10 @@ var UpdateLocation = function(req) {
 var getAllMapChats = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
       });
    // Prepare output in JSON format
     /*response = {
@@ -392,10 +393,10 @@ var getAllMapChats = function(req) {
 var CreateChat = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -431,10 +432,10 @@ var CreateChat = function(req) {
 var Login = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
       });
    // Prepare output in JSON format
     /*response = {
@@ -473,10 +474,10 @@ var Login = function(req) {
 var Register = function(req)  {
     return new Promise(function(resolve, reject) {
       var con = mysql.createConnection({
-          host: "localhost",
-          user: "lilave232",
-          password: "Quinn123!",
-          database: "GeoChat"
+          host: credentials.host,
+          user: credentials.username,
+          password: credentials.password,
+          database: credentials.database
         });
      // Prepare output in JSON format
       /*response = {

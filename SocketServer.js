@@ -2,6 +2,7 @@ var Person = require("./User.js").Person;
 var Users = require("./User.js").Users;
 var Chats = require("./User.js").Chats;
 var Chat = require("./User.js").Chat;
+var credentials = require("./credentials.js")
 var mysql = require('mysql');
 var moment = require('moment-timezone');
 var Users = new Users();
@@ -117,10 +118,10 @@ function handleMessages(type, data, connection) {
 
 function addMessageToChat(chatID, message, userFrom, colorBack, colorFront) {
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
         });
     // Prepare output in JSON format
     /*response = {
@@ -156,10 +157,10 @@ function getDateEST() {
 function alterChatsIDTable(chatID, message, userFrom, time) {
     //UPDATE `GeoChat`.`ChatsID` SET `Latest_Message`='Hello', `Sent_By`='lilave232', `Time_Of_Message` = NOW() WHERE (`chat_id` = '3b8331e3-c0cb-4c8e-85ef-35eefdd7b115');
     var con = mysql.createConnection({
-        host: "localhost",
-        user: "lilave232",
-        password: "Quinn123!",
-        database: "GeoChat"
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
         });
     // Prepare output in JSON format
     /*response = {
