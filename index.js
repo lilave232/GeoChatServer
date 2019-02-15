@@ -99,6 +99,24 @@ app.post('/ConfirmRequest',urlencodedParser, async function (req, res) {
   res.send(response);
 })
 
+app.post('/Subscribe',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await Subscribe(req);
+  res.send(response);
+})
+
+app.post('/Unsubscribe',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await Unsubscribe(req);
+  res.send(response);
+})
+
+app.post('/GetSubscribedChats',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await getSubscribed(req);
+  res.send(response);
+})
+
 
 var server = app.listen(8081, '0.0.0.0', function () {
 
@@ -514,7 +532,7 @@ var getAllMapChats = function(req) {
         let Latitude = req.body.Latitude
 
         //
-        con.query("SELECT * FROM `ChatsID` WHERE IFNULL((1000*6371*ACOS((SIN(RADIANS(" + Latitude + ")) * SIN(RADIANS(`Latitude`))) + (COS(RADIANS(" + Latitude + ")) * COS(RADIANS(`Latitude`)) * COS(RADIANS(`Longitude`) - RADIANS(" + Longitude + "))))),0) < 1000;", function (err, result, fields) {
+        con.query("SELECT * FROM `ChatsID` WHERE IFNULL((1000*6371*ACOS((SIN(RADIANS(" + Latitude + ")) * SIN(RADIANS(`Latitude`))) + (COS(RADIANS(" + Latitude + ")) * COS(RADIANS(`Latitude`)) * COS(RADIANS(`Longitude`) - RADIANS(" + Longitude + "))))),0) < 1000 AND `Private`='All In Range' ORDER BY `Time_Of_Message` DESC;", function (err, result, fields) {
           if (err) {
             console.log(err)
             response = JSON.stringify({error:true,Title:"Failure",message:"No Chats to Load!"});
@@ -624,56 +642,171 @@ var Login = function(req) {
 }
 
 var Register = function(req)  {
-    return new Promise(function(resolve, reject) {
-      var con = mysql.createConnection({
-          host: credentials.host,
-          user: credentials.username,
-          password: credentials.password,
-          database: credentials.database
-        });
-     // Prepare output in JSON format
-      /*response = {
-          first_name:req.body.first_name,
-          last_name:req.body.last_name
-      };*/
-      let Password = mysql.escape(crypto.createHash('md5').update(req.body.Password).digest("hex"));
-      let Username = mysql.escape(req.body.Username);
-      let Token = mysql.escape(req.body.Token);
-      var response = ""
-      con.connect(function(err) {
-          if (err) throw err;
-          /*Select all customers where the address starts with an "S":*/
-          con.query("INSERT INTO Users (`Username`,`Password`) VALUES (" + Username + ", " + Password + ")", function (err, result, fields) {
-            if (err) {
-              if (err.code == "ER_DUP_ENTRY") {
-                response = JSON.stringify({error:true,Title:"Failure",message:"This username is taken!!"});
-                con.end();
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
+      });
+    // Prepare output in JSON format
+    /*response = {
+        first_name:req.body.first_name,
+        last_name:req.body.last_name
+    };*/
+    let Password = mysql.escape(crypto.createHash('md5').update(req.body.Password).digest("hex"));
+    let Username = mysql.escape(req.body.Username);
+    let Token = mysql.escape(req.body.Token);
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        con.query("INSERT INTO Users (`Username`,`Password`) VALUES (" + Username + ", " + Password + ")", function (err, result, fields) {
+          if (err) {
+            if (err.code == "ER_DUP_ENTRY") {
+              response = JSON.stringify({error:true,Title:"Failure",message:"This username is taken!!"});
+              con.end();
+              resolve(response);
+            } else {
+              response = JSON.stringify({error:true,Title:"Failure",message:"An error has occured!!"});
+              con.end();
+              resolve(response);
+            }
+          } else {
+            con.query("SELECT * FROM Users WHERE Username=" + Username, function (err, result, fields) {
+              if (err) throw err;
+              if (result.length > 0)
+              {
+                console.log(result[0]);
+                response = JSON.stringify({error:false,Title:"Success",message:"Successfully Registered!!"});
                 resolve(response);
-              } else {
-                response = JSON.stringify({error:true,Title:"Failure",message:"An error has occured!!"});
+              }
+              else {
+                response = JSON.stringify({error:true,Title:"Failure",message:"User could not be registered!!"});
                 con.end();
                 resolve(response);
               }
-            } else {
-              con.query("SELECT * FROM Users WHERE Username=" + Username, function (err, result, fields) {
-                if (err) throw err;
-                if (result.length > 0)
-                {
-                  console.log(result[0]);
-                  response = JSON.stringify({error:false,Title:"Success",message:"Successfully Registered!!"});
-                  resolve(response);
-                }
-                else {
-                  response = JSON.stringify({error:true,Title:"Failure",message:"User could not be registered!!"});
-                  con.end();
-                  resolve(response);
-                }
-              });
-            }
-          });
-      });
+            });
+          }
+        });
     });
-  }
+  });
+}
+
+var Subscribe = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
+      });
+    //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
+    //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
+    chatID = req.body.chatID
+    member = req.body.member
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        con.query("INSERT INTO `Subscribed`(`chatID`,`member`,`unique_id`)VALUES(" + mysql.escape(chatID) +"," + mysql.escape(member) + "," + mysql.escape(chatID + member) + ");", function (err, result, fields) {
+          if (err) {
+            response = JSON.stringify({error:true,Title:"Failure",message:"Could not subscribe to chat"});
+            con.end();
+            resolve(response);
+          }
+          else {
+              con.end();
+              console.log("Subscribed to " + chatID + " For " + member)
+              response = JSON.stringify({error:false,Title:"Success",message:"Subscribed"});
+              resolve(response);
+            }
+        }); 
+    });
+  });
+}
+
+var Unsubscribe = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
+      });
+    //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
+    //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
+    chatID = req.body.chatID
+    member = req.body.member
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        con.query("DELETE FROM `Subscribed` WHERE `unique_id`=" + mysql.escape(chatID + member) + ";", function (err, result, fields) {
+          if (err) {
+            response = JSON.stringify({error:true,Title:"Failure",message:"Could not Unsubscribe"});
+            con.end();
+            resolve(response);
+          }
+          else {
+              con.end();
+              console.log("Unsubscribed to " + chatID + " For " + member)
+              response = JSON.stringify({error:false,Title:"Success",message:"Unsubscribed"});
+              resolve(response);
+            }
+        }); 
+    });
+  });
+}
+
+var getSubscribed = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
+      });
+   // Prepare output in JSON format
+    /*response = {
+        first_name:req.body.first_name,
+        last_name:req.body.last_name
+    };*/
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        let Username = mysql.escape(req.body.Username)
+
+        // 
+        con.query("SELECT * FROM GeoChat.Subscribed INNER JOIN GeoChat.ChatsID ON GeoChat.Subscribed.chatID=GeoChat.ChatsID.chat_id WHERE GeoChat.Subscribed.member=" + Username + "ORDER BY GeoChat.ChatsID.Time_Of_Message DESC;", function (err, result, fields) {
+          if (err) {
+            console.log(err)
+            response = JSON.stringify({error:true,Title:"Failure",message:"No Chats to Load!"});
+            con.end();
+            resolve(response);
+          } else {
+            if (result.length > 0)
+            {
+              //var sql = "UPDATE Users SET Token = " + mysql.escape(Token) + " WHERE Username = " + mysql.escape(Username) + "";
+              //  con.query(sql, function (err, result1) {
+              //  if (err) throw err;
+                response = JSON.stringify({error:false,Title:"Success",chats:result});
+                con.end();
+                resolve(response);
+              //});
+            }
+            else {
+                response = JSON.stringify({error:true,Title:"Failure",message:"No Chats to Load!"});
+                con.end();
+                resolve(response);
+            }
+          }
+        }); 
+    });
+  });
+}
+  
 function sendNotification(deviceToken, message, viewInTabBar, storyboardID) {
   var note = new apn.Notification();
   note.badge = 1;
