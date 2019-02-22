@@ -530,9 +530,10 @@ var getAllMapChats = function(req) {
         /*Select all customers where the address starts with an "S":*/
         let Longitude = req.body.Longitude
         let Latitude = req.body.Latitude
+        let Radius = req.body.Radius
 
         //
-        con.query("SELECT * FROM `ChatsID` WHERE IFNULL((1000*6371*ACOS((SIN(RADIANS(" + Latitude + ")) * SIN(RADIANS(`Latitude`))) + (COS(RADIANS(" + Latitude + ")) * COS(RADIANS(`Latitude`)) * COS(RADIANS(`Longitude`) - RADIANS(" + Longitude + "))))),0) < 1000 AND `Private`='All In Range' ORDER BY `Time_Of_Message` DESC;", function (err, result, fields) {
+        con.query("SELECT * FROM `ChatsID` WHERE IFNULL((1000*6371*ACOS((SIN(RADIANS(" + Latitude + ")) * SIN(RADIANS(`Latitude`))) + (COS(RADIANS(" + Latitude + ")) * COS(RADIANS(`Latitude`)) * COS(RADIANS(`Longitude`) - RADIANS(" + Longitude + "))))),0) < " + Radius + " AND `Private`='All In Range' ORDER BY `Time_Of_Message` DESC;", function (err, result, fields) {
           if (err) {
             console.log(err)
             response = JSON.stringify({error:true,Title:"Failure",message:"No Chats to Load!"});
