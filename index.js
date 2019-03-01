@@ -57,6 +57,12 @@ app.post('/CreateChat',urlencodedParser, async function (req, res) {
   res.send(response);
 })
 
+app.post('/CreatePrivateChat',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await CreatePrivateChat(req);
+  res.send(response);
+})
+
 app.post('/GetMapChats',urlencodedParser, async function (req, res) {
   var response = ""
   response = await getAllMapChats(req);
@@ -111,9 +117,21 @@ app.post('/Unsubscribe',urlencodedParser, async function (req, res) {
   res.send(response);
 })
 
+app.post('/UnsubscribePrivate',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await UnsubscribePrivate(req);
+  res.send(response);
+})
+
 app.post('/GetSubscribedChats',urlencodedParser, async function (req, res) {
   var response = ""
   response = await getSubscribed(req);
+  res.send(response);
+})
+
+app.post('/DeleteChat',urlencodedParser, async function (req, res) {
+  var response = ""
+  response = await DeleteChat(req.body.chatID);
   res.send(response);
 })
 
@@ -311,7 +329,7 @@ var addFriends = async function(req) {
               console.log("Added Friend " + Friend + " For " + Username)
               response = JSON.stringify({error:false,Title:"Success",message:"Friend Added"});
               if (token != false) {
-                sendNotification(token, "\uD83D\uDC65 You have received a friend request from "+req.body.Username, 3, "PendingRequests")
+                sendNotification(token,"\uD83D\uDC65 New Friend Request", "You have received a friend request from "+req.body.Username, 3, "PendingRequests")
               }
               resolve(response);
             }
@@ -431,7 +449,7 @@ var confirmRequests = async function(req) {
                 else {
                     console.log("Friend Request Confirmed For " + Friend + " For " + Username)
                     if (token != false) {
-                      sendNotification(token, "\uD83D\uDC65 "+req.body.Username + " has accepted your friend request", 3, "")
+                      sendNotification(token,"\uD83D\uDC65 Friend Request Accepted", req.body.Username + " has accepted your friend request", 3, "")
                     }
                     con.end();
                     response = JSON.stringify({error:false,Title:"Success",message:"Confirmed"});
@@ -592,8 +610,63 @@ var CreateChat = function(req) {
           else {
               con.end();
               console.log("Created Chat " + Chat_ID + " For " + Username)
-              response = JSON.stringify({error:false,Title:"Success",message:"Chat Created"});
+              response = JSON.stringify({error:false,Title:"Success",message:Chat_ID});
               resolve(response);
+            }
+        }); 
+    });
+  });
+}
+
+var CreatePrivateChat = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
+      });
+    let Chat_ID = uuidv4();
+    let Name = mysql.escape(req.body.Name);
+    let Username = mysql.escape(req.body.Username);
+    let Longitude = mysql.escape(req.body.Longitude);
+    let Latitude = mysql.escape(req.body.Latitude);
+    let Private = mysql.escape(req.body.Private);
+    let Image = mysql.escape(req.body.Image);
+    let Members = JSON.parse(req.body.Members)
+    var i = 0
+    sql_base = "INSERT INTO `Subscribed`(`chatID`,`member`,`unique_id`)VALUES"
+    sql = sql_base
+    for (i = 0; i < Members.length; i++) {
+      sql = sql + "(" + mysql.escape(Chat_ID) +"," + mysql.escape(Members[i]) + "," + mysql.escape(Chat_ID + Members[i]) + "),"
+    }
+    sql = sql + "(" + mysql.escape(Chat_ID) +"," + Username + "," + mysql.escape(Chat_ID + req.body.Username) + ")"
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        con.query("INSERT INTO `ChatsID`(`chat_id`,`chat_name`,`username`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(" + mysql.escape(Chat_ID) +"," + Name + "," + Username + ", " + Longitude + ", " + Latitude + ", " + Private + ", " + Image + ");", function (err, result, fields) {
+          if (err) {
+            response = JSON.stringify({error:true,Title:"Failure",message:"Could not add chat to Chat ID"});
+            con.end();
+            resolve(response);
+            throw err;
+          }
+          else {
+              con.query(sql, function (err, result, fields) {
+                console.log(sql)
+                if (err) {
+                  response = JSON.stringify({error:true,Title:"Failure",message:"Could not subscribe to chat"});
+                  con.end();
+                  resolve(response);
+                  throw err;
+                }
+                else {
+                    con.end();
+                    console.log("Subscribed to " + Chat_ID + " For " + Username)
+                    response = JSON.stringify({error:false,Title:"Success",message:Chat_ID});
+                    resolve(response);
+                  }
+              }); 
             }
         }); 
     });
@@ -760,6 +833,147 @@ var Unsubscribe = function(req) {
   });
 }
 
+var UnsubscribePrivate = function(req) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+        host: credentials.host,
+        user: credentials.username,
+        password: credentials.password,
+        database: credentials.database
+      });
+    //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
+    //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
+    chatID = req.body.chatID
+    member = req.body.member
+    chatTitle = req.body.chatTitle
+    var response = ""
+    con.connect(function(err) {
+        if (err) throw err;
+        /*Select all customers where the address starts with an "S":*/
+        con.query("DELETE FROM `Subscribed` WHERE `unique_id`=" + mysql.escape(chatID + member) + ";", function (err, result, fields) {
+          if (err) {
+            response = JSON.stringify({error:true,Title:"Failure",message:"Could not Unsubscribe"});
+            con.end();
+            resolve(response);
+          }
+          else {
+              con.query("SELECT * FROM GeoChat.Subscribed WHERE `chatID`=" + mysql.escape(chatID) + ";", function (err, result, fields) {
+                if (err) {
+                  console.log(err)
+                  response = JSON.stringify({error:true,Title:"Failure",message:"No Chats to Load!"});
+                  con.end();
+                  resolve(response);
+                } else {
+                    if (result.length > 1)
+                    {
+                        //var sql = "UPDATE Users SET Token = " + mysql.escape(Token) + " WHERE Username = " + mysql.escape(Username) + "";
+                        //  con.query(sql, function (err, result1) {
+                        //  if (err) throw err
+                        //UPDATE `GeoChat`.`ChatsID` SET `chat_name` = WHERE `chat_id` = <{expr}>;
+                        con.query("UPDATE `GeoChat`.`ChatsID` SET `chat_name` =" + mysql.escape(chatTitle) + " WHERE `chat_id`=" + mysql.escape(chatID) + ";", function (err, result, fields) {
+                          if (err) {
+                            throw err;
+                            response = JSON.stringify({error:true,Title:"Failure",message:"Could not Delete"});
+                            con.end();
+                            resolve(response);
+                          } else {
+                            console.log("Unsubscribed to " + chatID + " For " + member)
+                            response = JSON.stringify({error:false,Title:"Success",message:"Unsubscribed"});
+                            con.end();
+                            resolve(response);
+                          }
+                        });
+                        //});
+                    } else {
+                      con.query("DELETE FROM `ChatsID` WHERE `chat_id`=" + mysql.escape(chatID) + ";", function (err, result, fields) {
+                        if (err) {
+                          throw err;
+                          response = JSON.stringify({error:true,Title:"Failure",message:"Could not Delete"});
+                          con.end();
+                          resolve(response);
+                        } else {
+                          con.query("DELETE FROM `Subscribed` WHERE `chatID`=" + mysql.escape(chatID) + ";", function (err, result, fields) {
+                            if (err) {
+                              throw err;
+                              response = JSON.stringify({error:true,Title:"Failure",message:"Could not Delete"});
+                              con.end();
+                              resolve(response);
+                            } else {
+                              con.query("DELETE FROM `Chats` WHERE `chatID`=" + mysql.escape(chatID) + ";", function (err, result, fields) {
+                                if (err) {
+                                  throw err;
+                                  response = JSON.stringify({error:true,Title:"Failure",message:"Could not Delete"});
+                                  con.end();
+                                  resolve(response);
+                                } else {
+                                  console.log("Deleted " + chatID)
+                                  console.log("Unsubscribed to " + chatID + " For " + member)
+                                  response = JSON.stringify({error:false,Title:"Success",message:"Chat Deleted"});
+                                  con.end();
+                                  resolve(response);
+                                }
+                              });
+                            }
+                          });
+                        }
+                      });
+                    }
+                }
+              });
+            }
+        }); 
+    });
+  });
+}
+
+var DeleteChat = function(chatID) {
+  return new Promise(function(resolve, reject) {
+    var con = mysql.createConnection({
+      host: credentials.host,
+      user: credentials.username,
+      password: credentials.password,
+      database: credentials.database
+    });
+  //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
+  //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
+  var response = ""
+  con.connect(function(err) {
+      if (err) throw err;
+      con.query("DELETE FROM `ChatsID` WHERE `chat_id`=" + mysql.escape(chatID) + ";", function (err, result, fields) {
+        if (err) {
+          throw err;
+          response = JSON.stringify({error:true,Title:"Failure",message:"Could not Delete"});
+          con.end();
+          resolve(response);
+        } else {
+          con.query("DELETE FROM `Subscribed` WHERE `chatID`=" + mysql.escape(chatID) + ";", function (err, result, fields) {
+            if (err) {
+              throw err;
+              response = JSON.stringify({error:true,Title:"Failure",message:"Could not Delete"});
+              con.end();
+              resolve(response);
+            } else {
+              con.query("DELETE FROM `Chats` WHERE `chatID`=" + mysql.escape(chatID) + ";", function (err, result, fields) {
+                if (err) {
+                  throw err;
+                  response = JSON.stringify({error:true,Title:"Failure",message:"Could not Delete"});
+                  con.end();
+                  resolve(response);
+                } else {
+                  console.log("Deleted " + chatID)
+                  response = JSON.stringify({error:false,Title:"Success",message:"Chat Deleted"});
+                  con.end();
+                  resolve(response);
+                }
+              });
+            }
+          });
+        }
+      });
+    });
+  });
+}
+
 var getSubscribed = function(req) {
   return new Promise(function(resolve, reject) {
     var con = mysql.createConnection({
@@ -808,11 +1022,12 @@ var getSubscribed = function(req) {
   });
 }
   
-function sendNotification(deviceToken, message, viewInTabBar, storyboardID) {
+function sendNotification(deviceToken,title, message, viewInTabBar, storyboardID) {
   var note = new apn.Notification();
   note.badge = 1;
   note.sound = "ping.aiff";
-  note.alert = message;
+  note.title = title
+  note.body = message;
   note.payload = {'storyboardID': storyboardID, 'viewInTabBar': viewInTabBar};
   note.topic = "veriplat.GeoChat";
   apnProvider.send(note, deviceToken).then( (result) => {

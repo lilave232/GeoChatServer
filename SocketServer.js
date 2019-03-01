@@ -7,6 +7,16 @@ var mysql = require('mysql');
 var moment = require('moment-timezone');
 var Users = new Users();
 var Chats = new Chats();
+var apn = require('apn');
+var options = {
+    token: {
+      key: credentials.notification_key,
+      keyId: credentials.notification_key_id,
+      teamId: credentials.notification_team_id
+    },
+    production: false
+  };
+var apnProvider = new apn.Provider(options);
 function StartServer(server) {
     var WebSocketServer = require('websocket').server;
     var http = require('http');
@@ -51,7 +61,7 @@ function StartServer(server) {
         });
     });
 }
-function handleMessages(type, data, connection) {
+async function handleMessages(type, data, connection) {
     switch(type){
         //User Connect
         case 0:
@@ -113,6 +123,35 @@ function handleMessages(type, data, connection) {
             }
             console.log(Chats)
             break;
+        //Message Send With Notification
+        case 5:
+            chatID = data["Message"]["chatID"]
+            message = data["Message"]["message"]
+            userFrom = data["Message"]["userFrom"]
+            colorBack = data["Message"]["colorBack"]
+            colorFront = data["Message"]["colorFront"]
+            chatTitle = data["Message"]["chatTitle"]
+            addMessageToChat(chatID, message, userFrom, colorBack, colorFront)
+            if (!Users.isUserOnline(userFrom)) {
+                var User = new Person(userFrom,connection);
+                Users.addUser(User);
+                addUserToChat(chatID, Username)
+            }
+            var chat = Chats.getChat(chatID)
+            for (x = 0; x < chat.Users.length; x++) {
+                response = JSON.stringify({type:0,message:message,chatID:chatID,userFrom:userFrom,colorBack:colorBack,colorFront:colorFront});
+                chat.Users[x].connection.sendUTF(response)
+            }
+            console.log("chatTitle")
+            members = await getMembers(chatID,userFrom)
+            var i = 0
+            for (i = 0; i < members.length; i++)
+            {
+                console.log(members[i]["Token"])
+                payload = {'storyboardID': "Chat", 'viewInTabBar': 2, 'chatID': chatID, 'chatTitle':chatTitle}
+                sendNotification(members[i]["Token"],"✉️ " + userFrom, message, payload)
+            }
+            break;
     }
 }
 
@@ -145,7 +184,47 @@ function addMessageToChat(chatID, message, userFrom, colorBack, colorFront) {
         }); 
     });
 }
-
+var getMembers = function(chatID, Username) {
+    return new Promise(function(resolve, reject) {
+      var con = mysql.createConnection({
+          host: credentials.host,
+          user: credentials.username,
+          password: credentials.password,
+          database: credentials.database
+        });
+     // Prepare output in JSON format
+      /*response = {
+          first_name:req.body.first_name,
+          last_name:req.body.last_name
+      };*/
+      var response = ""
+      con.connect(function(err) {
+          if (err) throw err;
+          /*Select all customers where the address starts with an "S":*/
+  
+          // 
+          con.query("SELECT GeoChat.Users.Token FROM GeoChat.Subscribed INNER JOIN GeoChat.Users ON GeoChat.Subscribed.member=GeoChat.Users.Username WHERE `chatID`=" + mysql.escape(chatID) + " AND `member`!=" + mysql.escape(Username) + ";", function (err, result, fields) {
+            if (err) {
+              console.log(err)
+              response = JSON.stringify({error:true,Title:"Failure",message:"No Chats to Load!"});
+              con.end();
+              resolve(response);
+            } else {
+                if (result.length > 0)
+                {
+                    //var sql = "UPDATE Users SET Token = " + mysql.escape(Token) + " WHERE Username = " + mysql.escape(Username) + "";
+                    //  con.query(sql, function (err, result1) {
+                    //  if (err) throw err;
+                    response = result
+                    con.end();
+                    resolve(response);
+                    //});
+                }
+            }
+          }); 
+      });
+    });
+  }
 function getDateEST() {
     var d = new Date();
     var myTimezone = "America/Toronto";
@@ -197,6 +276,19 @@ function addUserToChat(chatID, Username) {
         Chats.getChat(chatID).addUser(User)
     }
 }
+
+function sendNotification(deviceToken,title, message, payload) {
+    var note = new apn.Notification();
+    note.badge = 1;
+    note.sound = "ping.aiff";
+    note.title = title
+    note.body = message;
+    note.payload = payload;
+    note.topic = "veriplat.GeoChat";
+    apnProvider.send(note, deviceToken).then( (result) => {
+      // see documentation for an explanation of result
+    });
+  }
 
 module.exports = {
     start: function (server) {StartServer(server)}
