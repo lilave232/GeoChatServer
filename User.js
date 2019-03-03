@@ -6,8 +6,14 @@ function Users() {
 }
 
 UsersMethod.addUser = function(Person) {
-    this.Users.push(Person);
-    console.log("User " + Person.username + " Joined")
+    if (!this.isUserOnline(Person.username))
+    {
+        this.Users.push(Person);
+        console.log("User " + Person.username + " Joined")
+    } else {
+        this.updateLocation(Person)
+    }
+    console.log(this.Users.length)
 }
 
 UsersMethod.deleteUser = function(Connection) {
@@ -45,15 +51,56 @@ UsersMethod.getUser = function(Username) {
     }
 }
 
+UsersMethod.updateLocation = function(Person) {
+    var picked = this.Users.find(x => x.username == Person.username)
+    if (picked == undefined) {
+        
+    } else {
+        picked = Person
+        console.log("Update User Location")
+    }
+}
+
+UsersMethod.getUsersInRange = function(Longitude, Latitude) {
+    var picked = this.Users.filter(x =>  getDistance(x.longitude, x.latitude, Longitude, Latitude) < x.radius)
+    return picked
+    //var picked = this.Users.find(x => x.username == Person.username)
+}
+
+function getDistance(Lon1, Lat1, Lon2, Lat2) {
+    //(1000*6371*ACOS(sixth + seventh)),0) < " + Radius + "
+    Lon1Rad = Math.radians(Lon1)
+    Lat1Rad = Math.radians(Lat1)
+    Lon2Rad = Math.radians(Lon2)
+    Lat2Rad = Math.radians(Lat2)
+    first = Math.sin(Lat1Rad)
+    second = Math.sin(Lat2Rad)
+    third = Math.cos(Lat1Rad)
+    fourth = Math.cos(Lat2Rad)
+    fifth = Math.cos(Lon2Rad - Lon1Rad)
+    sixth = (first * second)
+    seventh = (third * fourth * fifth)
+    eighth = Math.acos(sixth + seventh)
+    ninth = 1000*6371*eighth
+    return ninth
+}
+
+Math.radians = function(degrees) {
+    return degrees * Math.PI / 180;
+};
+
 UsersMethod.getSize = function() {
     return this.Users.length;
 }
 
 var PersonMethod = Person.prototype;
 
-function Person(username, connection) {
+function Person(username, longitude, latitude, radius, connection) {
     // always initialize all instance properties
     this.username = username;
+    this.longitude = longitude;
+    this.latitude = latitude;
+    this.radius = radius;
     this.connection = connection;
 }
 

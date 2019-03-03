@@ -52,7 +52,7 @@ function StartServer(server) {
                 let returnmess = JSON.parse(message.utf8Data);
                 let type = returnmess["Type"];
                 let Data = returnmess["Data"];
-                //console.log(returnmess);
+                //console.log(returnmess["Data"]["User"]["Longitude"]);
                 handleMessages(type,Data,connection);
             }
         });
@@ -65,9 +65,13 @@ async function handleMessages(type, data, connection) {
     switch(type){
         //User Connect
         case 0:
-            Username = data["User"]["Username"]
-            var User = new Person(Username,connection);
+            let username = data["User"]["Username"]
+            longitude = parseFloat(data["User"]["Longitude"])
+            latitude = parseFloat(data["User"]["Latitude"])
+            let radius = parseFloat(data["User"]["Radius"])
+            var User = new Person(username,longitude,latitude,radius,connection);
             Users.addUser(User);
+            console.log(Users)
             break;
         //Message Send
         case 1:
@@ -76,7 +80,9 @@ async function handleMessages(type, data, connection) {
             userFrom = data["Message"]["userFrom"]
             colorBack = data["Message"]["colorBack"]
             colorFront = data["Message"]["colorFront"]
-            addMessageToChat(chatID, message, userFrom, colorBack, colorFront)
+            longitude = data["Message"]["longitude"]
+            latitude = data["Message"]["latitude"]
+            addMessageToChat(chatID, message, userFrom, colorBack, colorFront, longitude,latitude)
             if (!Users.isUserOnline(userFrom)) {
                 var User = new Person(userFrom,connection);
                 Users.addUser(User);
@@ -131,7 +137,9 @@ async function handleMessages(type, data, connection) {
             colorBack = data["Message"]["colorBack"]
             colorFront = data["Message"]["colorFront"]
             chatTitle = data["Message"]["chatTitle"]
-            addMessageToChat(chatID, message, userFrom, colorBack, colorFront)
+            longitude = data["Message"]["longitude"]
+            latitude = data["Message"]["latitude"]
+            addMessageToChat(chatID, message, userFrom, colorBack, colorFront, longitude, latitude)
             if (!Users.isUserOnline(userFrom)) {
                 var User = new Person(userFrom,connection);
                 Users.addUser(User);
@@ -142,20 +150,51 @@ async function handleMessages(type, data, connection) {
                 response = JSON.stringify({type:0,message:message,chatID:chatID,userFrom:userFrom,colorBack:colorBack,colorFront:colorFront});
                 chat.Users[x].connection.sendUTF(response)
             }
-            console.log("chatTitle")
             members = await getMembers(chatID,userFrom)
             var i = 0
             for (i = 0; i < members.length; i++)
             {
-                console.log(members[i]["Token"])
                 payload = {'storyboardID': "Chat", 'viewInTabBar': 2, 'chatID': chatID, 'chatTitle':chatTitle}
                 sendNotification(members[i]["Token"],"✉️ " + userFrom, message, payload)
             }
             break;
+        //Chat Added
+        case 6:
+            longitude = parseFloat(data["Chat"]["Longitude"])
+            latitude = parseFloat(data["Chat"]["Latitude"])
+            let range = Users.getUsersInRange(longitude,latitude)
+            var i = 0
+            for (i = 0; i < range.length; i++) {
+                response = JSON.stringify({type:1,Latitude:latitude,Longitude:longitude});
+                range[i].connection.sendUTF(response)
+            }
+            break;
+        //Subscribed Chat Removed
+        case 7:
+            var i = 0
+            title = data["Users"]
+            array = title.split(",")
+            for (i = 0; i < array.length; i++) {
+                response = JSON.stringify({type:2});
+                Users.getConnection(array[i]).sendUTF(response)
+                //range[i].connection.sendUTF(response)
+            }
+            break;
+        case 8:
+            var i = 0
+            title = data["Users"]
+            array = title.split(",")
+            for (i = 0; i < array.length; i++) {
+                response = JSON.stringify({type:2});
+                Users.getConnection(array[i]).sendUTF(response)
+                //range[i].connection.sendUTF(response)
+            }
+            break;
+
     }
 }
 
-function addMessageToChat(chatID, message, userFrom, colorBack, colorFront) {
+function addMessageToChat(chatID, message, userFrom, colorBack, colorFront, longitude, latitude) {
     var con = mysql.createConnection({
         host: credentials.host,
         user: credentials.username,
@@ -179,7 +218,7 @@ function addMessageToChat(chatID, message, userFrom, colorBack, colorFront) {
             console.log(err)
             } else {
             console.log("Message Added To Chat")
-            alterChatsIDTable(chatID, message, userFrom, time)
+            alterChatsIDTable(chatID, message, userFrom, time, longitude, latitude)
             }
         }); 
     });
@@ -233,7 +272,7 @@ function getDateEST() {
     return myDatetimeString
   }
 
-function alterChatsIDTable(chatID, message, userFrom, time) {
+function alterChatsIDTable(chatID, message, userFrom, time, longitude, latitude) {
     //UPDATE `GeoChat`.`ChatsID` SET `Latest_Message`='Hello', `Sent_By`='lilave232', `Time_Of_Message` = NOW() WHERE (`chat_id` = '3b8331e3-c0cb-4c8e-85ef-35eefdd7b115');
     var con = mysql.createConnection({
         host: credentials.host,
@@ -256,7 +295,12 @@ function alterChatsIDTable(chatID, message, userFrom, time) {
             if (err) {
             console.log(err)
             } else {
-            console.log("Message Added To Chat")
+                console.log("Message added as latest")
+                range_ = Users.getUsersInRange(longitude,latitude)
+                for (x = 0; x < range_.length; x++) {
+                    response = JSON.stringify({type:2});
+                    range_[x].connection.sendUTF(response)
+                }
             }
         }); 
     });
