@@ -13,6 +13,7 @@
     "body-parser": "^1.18.3",
     "crypto": "^1.0.1",
     "express": "^4.16.4",
+    "formidable": "^1.2.1",
     "http": "0.0.0",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.23",

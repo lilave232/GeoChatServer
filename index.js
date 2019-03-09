@@ -4,9 +4,11 @@ var crypto = require('crypto');
 var mysql = require('mysql');
 var apn = require('apn');
 var WebSocketServer = require('websocket').server;
-var credentials = require("./credentials.js")
+var credentials = require("./credentials.js");
 var http = require('http');
-const uuidv4 = require('uuid/v4')
+const uuidv4 = require('uuid/v4');
+const formidable = require('formidable');
+var fs = require("fs");
 var _connections = [];
 var _users = [];
 var _address = [];
@@ -135,6 +137,23 @@ app.post('/DeleteChat',urlencodedParser, async function (req, res) {
   res.send(response);
 })
 
+app.post('/ProfileImageUpload', (req, res) => {
+  new formidable.IncomingForm().parse(req)
+    .on('fileBegin', (name, file) => {
+      path = __dirname + '/uploads/' + file.name
+      console.log(path)
+    })
+    .on('file', (name, file) => {
+      oldpath = file.path
+      newpath = __dirname + '/uploads/' + file.name
+      fs.rename(oldpath, newpath, function (err) {
+        if (err) throw err;
+        res.write('File uploaded and moved!');
+        res.end();
+      });
+      console.log('Uploaded file', newpath)
+    })
+  })
 
 var server = app.listen(8081, '0.0.0.0', function () {
 
@@ -158,7 +177,8 @@ var getChat = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
    // Prepare output in JSON format
     /*response = {
@@ -206,7 +226,8 @@ var getFriends = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
    // Prepare output in JSON format
     /*response = {
@@ -258,7 +279,8 @@ var getAllUsers = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
    // Prepare output in JSON format
     /*response = {
@@ -309,7 +331,8 @@ var addFriends = async function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -344,7 +367,8 @@ var getToken = function (Username) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
    // Prepare output in JSON format
     /*response = {
@@ -385,7 +409,8 @@ var removeFriend = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -421,7 +446,8 @@ var confirmRequests = async function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -468,7 +494,8 @@ var UpdateLocation = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     //UPDATE `GeoChat`.`Users` SET `Longitude` = '-80.53403359682538', `Latitude` = '43.474176473396845' WHERE (`Username` = 'lilave232');
     let Username = req.body.Username;
@@ -502,7 +529,8 @@ var UpdateToken = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     //UPDATE `GeoChat`.`Users` SET `Longitude` = '-80.53403359682538', `Latitude` = '43.474176473396845' WHERE (`Username` = 'lilave232');
     let Username = req.body.Username;
@@ -535,7 +563,8 @@ var getAllMapChats = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
    // Prepare output in JSON format
     /*response = {
@@ -585,7 +614,8 @@ var CreateChat = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -624,7 +654,8 @@ var CreatePrivateChat = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     let Chat_ID = uuidv4();
     let Name = mysql.escape(req.body.Name);
@@ -679,7 +710,8 @@ var Login = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
    // Prepare output in JSON format
     /*response = {
@@ -721,7 +753,8 @@ var Register = function(req)  {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     // Prepare output in JSON format
     /*response = {
@@ -773,7 +806,8 @@ var Subscribe = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -806,7 +840,8 @@ var Unsubscribe = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -839,7 +874,8 @@ var UnsubscribePrivate = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
     //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
     //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -932,7 +968,8 @@ var DeleteChat = function(chatID) {
       host: credentials.host,
       user: credentials.username,
       password: credentials.password,
-      database: credentials.database
+      database: credentials.database,
+      charset: "utf8mb4_unicode_ci"
     });
   //INSERT INTO `GeoChat`.`ChatsID`(`chat_id`,`chat_name`,`username`,`created_at`,`Longitude`,`Latitude`,`Private`,`Image`)VALUES(<{chat_id: }>,<{chat_name: }>,<{username: }>,<{created_at: CURRENT_TIMESTAMP}>,<{Longitude: }>,<{Latitude: }>,<{Private: 0}>,<{Image: Yellow}>);
   //CREATE TABLE `" + chat_id + "` (`message_ID` int NOT NULL AUTO_INCREMENT,`userFrom` varchar(100) NOT NULL, `message` LongText, `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`message_ID`))
@@ -980,7 +1017,8 @@ var getSubscribed = function(req) {
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
       });
    // Prepare output in JSON format
     /*response = {
@@ -1012,7 +1050,7 @@ var getSubscribed = function(req) {
               //});
             }
             else {
-                response = JSON.stringify({error:true,Title:"Failure",message:"No Chats to Load!"});
+                response = JSON.stringify({error:false,Title:"Failure",message:"No Chats to Load!",chats:[]});
                 con.end();
                 resolve(response);
             }

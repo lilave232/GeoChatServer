@@ -65,10 +65,10 @@ async function handleMessages(type, data, connection) {
     switch(type){
         //User Connect
         case 0:
-            let username = data["User"]["Username"]
+            username = data["User"]["Username"]
             longitude = parseFloat(data["User"]["Longitude"])
             latitude = parseFloat(data["User"]["Latitude"])
-            let radius = parseFloat(data["User"]["Radius"])
+            radius = parseFloat(data["User"]["Radius"])
             var User = new Person(username,longitude,latitude,radius,connection);
             Users.addUser(User);
             console.log(Users)
@@ -98,8 +98,11 @@ async function handleMessages(type, data, connection) {
         case 2:
             chatID = data["Chat"]["chatID"]
             Username = data["Chat"]["Username"]
+            longitude = parseFloat(data["Chat"]["Longitude"])
+            latitude = parseFloat(data["Chat"]["Latitude"])
+            radius = parseFloat(data["Chat"]["Radius"])
             if (!Users.isUserOnline(Username)) {
-                var User = new Person(Username,connection);
+                var User = new Person(Username,longitude, latitude, radius, connection);
                 Users.addUser(User);
             }
             addUserToChat(chatID, Username)
@@ -176,7 +179,10 @@ async function handleMessages(type, data, connection) {
             array = title.split(",")
             for (i = 0; i < array.length; i++) {
                 response = JSON.stringify({type:2});
-                Users.getConnection(array[i]).sendUTF(response)
+                if (Users.getConnection(array[i]) != false)
+                {
+                    Users.getConnection(array[i]).sendUTF(response)
+                }
                 //range[i].connection.sendUTF(response)
             }
             break;
@@ -186,7 +192,10 @@ async function handleMessages(type, data, connection) {
             array = title.split(",")
             for (i = 0; i < array.length; i++) {
                 response = JSON.stringify({type:2});
-                Users.getConnection(array[i]).sendUTF(response)
+                if (Users.getConnection(array[i]) != false)
+                {
+                    Users.getConnection(array[i]).sendUTF(response)
+                }
                 //range[i].connection.sendUTF(response)
             }
             break;
@@ -199,7 +208,8 @@ function addMessageToChat(chatID, message, userFrom, colorBack, colorFront, long
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
         });
     // Prepare output in JSON format
     /*response = {
@@ -229,7 +239,8 @@ var getMembers = function(chatID, Username) {
           host: credentials.host,
           user: credentials.username,
           password: credentials.password,
-          database: credentials.database
+          database: credentials.database,
+          charset: "utf8mb4_unicode_ci"
         });
      // Prepare output in JSON format
       /*response = {
@@ -278,7 +289,8 @@ function alterChatsIDTable(chatID, message, userFrom, time, longitude, latitude)
         host: credentials.host,
         user: credentials.username,
         password: credentials.password,
-        database: credentials.database
+        database: credentials.database,
+        charset: "utf8mb4_unicode_ci"
         });
     // Prepare output in JSON format
     /*response = {
